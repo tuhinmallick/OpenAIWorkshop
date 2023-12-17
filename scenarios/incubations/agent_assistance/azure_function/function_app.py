@@ -22,10 +22,10 @@ async def recommend(req: func.HttpRequest, client) -> func.HttpResponse:
     conversation_id = req.route_params.get('conversation_id')
     entity_id = df.EntityId("entity_function",conversation_id)
     entity_state_result = await client.read_entity_state(entity_id)
-    
+
     if entity_state_result.entity_exists:
         entity_state = str(entity_state_result.entity_state)
-        logging.info("conversation: "+ entity_state )
+        logging.info(f"conversation: {entity_state}")
         solutions=recommend_solution(entity_state)
         return func.HttpResponse(str(solutions))
     else:

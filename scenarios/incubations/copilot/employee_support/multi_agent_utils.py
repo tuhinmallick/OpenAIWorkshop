@@ -271,7 +271,7 @@ def stream_write(st, agent_response):
     for response in agent_response:
         if len(response.choices)>0:
             full_response += response.choices[0].delta.get("content", "")
-            message_placeholder.markdown(full_response + "▌")
+            message_placeholder.markdown(f"{full_response}▌")
     message_placeholder.markdown(full_response)
     return full_response
 
@@ -323,29 +323,29 @@ class Smart_Coordinating_Agent(Smart_Agent):
                 response_message = response["choices"][0]["message"]
 
                 # Step 2: check if GPT wanted to call a function
-                if  response_message.get("function_call"):
+                if response_message.get("function_call"):
                     print("Recommended Function call:")
                     print(response_message.get("function_call"))
                     print()
-                    
+
                     # Step 3: call the function
                     # Note: the JSON response may not always be valid; be sure to handle errors
-                    
+
                     function_name = response_message["function_call"]["name"]
                     if function_name == GET_HELP_FUNCTION_NAME:
                         request_agent_change = True
-                        
-                        
+
+
                     # verify function exists
                     if function_name not in self.functions_list:
-                        print("Function " + function_name + " does not exist")
+                        print(f"Function {function_name} does not exist")
 
                     function_to_call = self.functions_list[function_name]  
-                    
+
                     # verify function has correct number of arguments
                     function_args = json.loads(response_message["function_call"]["arguments"])
                     if check_args(function_to_call, function_args) is False:
-                        print("Invalid number of arguments for function: " + function_name)
+                        print(f"Invalid number of arguments for function: {function_name}")
                     function_response = function_to_call(**function_args)
                     print("Output of function call:")
                     print(function_response)
@@ -355,7 +355,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                     if function_name==VALIDATE_IDENTIFY_FUNCTION_NAME:
                         context_to_persist = function_response
                     # Step 4: send the info on the function call and function response to GPT
-                    
+
                     # adding assistant response to messages
                     conversation.append(
                         {
@@ -379,7 +379,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                         deployment_id=self.engine,
                         stream=stream,
                     )  # get a new response from GPT where it can see the function response
-                    
+
                     if not stream:
                         assistant_response = second_response["choices"][0]["message"]["content"]
                         conversation.append({"role": "assistant", "content": assistant_response})
@@ -398,7 +398,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                     assistant_response="Haizz, my memory is having some trouble, can you repeat what you just said?"
 
                     break
-                print("Exception as below, will retry\n", str(e))
+                print("Exception as below, will retry\n", e)
                 time.sleep(8)
 
         return False, request_agent_change,context_to_persist, conversation, assistant_response

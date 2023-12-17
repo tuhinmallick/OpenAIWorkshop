@@ -66,17 +66,18 @@ def query_flights(from_, to, departure_time):
     #first convert the departure time to a datetime object assuming the format of the departutre time is '2020-09-20T10:30:00'  
     def get_new_times(departure_time, delta):
         dp_dt = parser.parse(departure_time)
-        
+
         new_dp_dt = dp_dt + timedelta(hours=delta)
         new_ar_dt = new_dp_dt + timedelta(hours=2)
 
         new_departure_time = new_dp_dt.strftime("%Y-%m-%dT%H:%M:%S")
         new_arrival_time = new_ar_dt.strftime("%Y-%m-%dT%H:%M:%S")
         return new_departure_time, new_arrival_time
+
     flights = ""
     for flight_num, delta in [("AA479", -1), ("AA490",-2), ("AA423",-3)]:
         new_departure_time, new_arrival_time = get_new_times(departure_time, delta)
-        flights= flights +f"flight number {flight_num}, from: {from_}, to: {to}, departure_time: {new_departure_time}, arrival_time: {new_arrival_time}, flight_status: on time \n"
+        flights = f"{flights}flight number {flight_num}, from: {from_}, to: {to}, departure_time: {new_departure_time}, arrival_time: {new_arrival_time}, flight_status: on time \n"
     return flights
 def confirm_flight_change(current_ticket_number, new_flight_num, new_departure_time,new_arrival_time):
     # based on the input flight number and from, to and departure time, generate a random seat number and a random gate number and random amount of refund or extra charge for the flight change
@@ -134,24 +135,23 @@ def load_user_flight_info(user_id):
     for item in cosmos_container_client.query_items(
             query=f'SELECT * FROM c  WHERE c.customer_id="{user_id}" AND c.status="open"',
             enable_cross_partition_query=True):
-            flight={}
-            flight['airline'] = item['airline']
-            flight['flight_num'] = item['flight_num']
-            flight['seat_num'] = item['seat_num']
-            flight['departure_airport'] = item['departure_airport']
-            flight['seat_num'] = item['seat_num']
-            flight['departure_airport'] = item['departure_airport']
-            flight['arrival_airport'] = item['arrival_airport']
-            flight['departure_time'] = item['departure_time']
-            flight['arrival_time'] = item['arrival_time']
-            flight['ticket_class'] = item['ticket_class']
-            flight['ticket_num'] = item['ticket_num']
-            flight['gate'] = item['gate']
-            flight['status'] = item['status']
-            matched_flights.append(flight)
+        flight = {
+            'airline': item['airline'],
+            'flight_num': item['flight_num'],
+            'seat_num': item['seat_num'],
+            'departure_airport': item['departure_airport'],
+            'arrival_airport': item['arrival_airport'],
+            'departure_time': item['departure_time'],
+            'arrival_time': item['arrival_time'],
+            'ticket_class': item['ticket_class'],
+            'ticket_num': item['ticket_num'],
+            'gate': item['gate'],
+            'status': item['status'],
+        }
+        matched_flights.append(flight)
 
-    if len(matched_flights) == 0:
-        return f"Sorry, we cannot find any flight information for you"
+    if not matched_flights:
+        return "Sorry, we cannot find any flight information for you"
 
     return str(matched_flights)
 PERSONA = """

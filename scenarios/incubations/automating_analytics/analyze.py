@@ -37,42 +37,41 @@ def get_table_schema(sql_query_tool, sql_engine='sqlite'):
         raise Exception("unsupported SQL engine, please manually update code to retrieve database schema")
 
     # Execute the SQL query and store the results in a DataFrame  
-    df = sql_query_tool.execute_sql_query(sql_query, limit=None)  
+    df = sql_query_tool.execute_sql_query(sql_query, limit=None)
     output=[]
     # Initialize variables to store table and column information  
-    current_table = ''  
+    current_table = ''
     columns = []  
-    
-    # Loop through the query results and output the table and column information  
+
+    # Loop through the query results and output the table and column information
     for index, row in df.iterrows():
         if sql_engine== 'sqlserver': 
             table_name = f"{row['TABLE_SCHEMA']}.{row['TABLE_NAME']}"  
         else:
             table_name = f"{row['TABLE_NAME']}" 
 
-        column_name = row['COLUMN_NAME']  
-        data_type = row['DATA_TYPE']   
+        column_name = row['COLUMN_NAME']
+        data_type = row['DATA_TYPE']
         if " " in table_name:
-            table_name= f"[{table_name}]" 
-        column_name = row['COLUMN_NAME']  
+            table_name= f"[{table_name}]"
+        column_name = row['COLUMN_NAME']
         if " " in column_name:
             column_name= f"[{column_name}]" 
 
-        # If the table name has changed, output the previous table's information  
-        if current_table != table_name and current_table != '':  
+        # If the table name has changed, output the previous table's information
+        if current_table not in [table_name, '']:  
             output.append(f"table: {current_table}, columns: {', '.join(columns)}")  
             columns = []  
-        
+
         # Add the current column information to the list of columns for the current table  
         columns.append(f"{column_name} {data_type}")  
-        
+
         # Update the current table name  
         current_table = table_name  
-    
+
     # Output the last table's information  
     output.append(f"table: {current_table}, columns: {', '.join(columns)}")
-    output = "\n ".join(output)
-    return output
+    return "\n ".join(output)
 
 class ChatGPT_Handler: #designed for chatcompletion API
     def __init__(self, gpt_deployment=None,max_response_tokens=None,token_limit=None,temperature=None,extract_patterns=None) -> None:
@@ -90,44 +89,39 @@ class ChatGPT_Handler: #designed for chatcompletion API
         max_tokens=self.max_response_tokens,
         stop=stop
         )
-            
-        llm_output = response['choices'][0]['message']['content']
-        return llm_output
+
+        return response['choices'][0]['message']['content']
     def extract_output(self, text_input):
-            output={}
-            if len(text_input)==0:
-                return output
-            for pattern in self.extract_patterns: 
-                if "sql" in pattern[1]:
-
-                    sql_query=""
-                    sql_result = re.findall(pattern[1], text_input, re.DOTALL)
-
-                    if len(sql_result)>0:
-                        sql_query=sql_result[0]
-                        output[pattern[0]]= sql_query
-                    else:
-                        return output
-                    text_before = text_input.split(sql_query)[0].strip("\n").strip("```sql").strip("\n")
-
-                    if text_before is not None and len(text_before)>0:
-                        output["text_before"]=text_before
-                    text_after =text_input.split(sql_query)[1].strip("\n").strip("```")
-                    if text_after is not None and len(text_after)>0:
-                        output["text_after"]=text_after
-                    return output
-
-                if "python" in pattern[1]:
-                    result = re.findall(pattern[1], text_input, re.DOTALL)
-                    if len(result)>0:
-                        output[pattern[0]]= result[0]
-                else:
-
-                    result = re.search(pattern[1], text_input,re.DOTALL)
-                    if result:  
-                        output[result.group(1)]= result.group(2)
-
+        output={}
+        if len(text_input)==0:
             return output
+        for pattern in self.extract_patterns: 
+            if "sql" in pattern[1]:
+
+                sql_query=""
+                sql_result = re.findall(pattern[1], text_input, re.DOTALL)
+
+                if len(sql_result) <= 0:
+                    return output
+                sql_query=sql_result[0]
+                output[pattern[0]]= sql_query
+                text_before = text_input.split(sql_query)[0].strip("\n").strip("```sql").strip("\n")
+
+                if text_before is not None and len(text_before)>0:
+                    output["text_before"]=text_before
+                text_after =text_input.split(sql_query)[1].strip("\n").strip("```")
+                if text_after is not None and len(text_after)>0:
+                    output["text_after"]=text_after
+                return output
+
+            if "python" in pattern[1]:
+                result = re.findall(pattern[1], text_input, re.DOTALL)
+                if len(result)>0:
+                    output[pattern[0]]= result[0]
+            elif result := re.search(pattern[1], text_input, re.DOTALL):
+                output[result.group(1)]= result.group(2)
+
+        return output
 
 class SQL_Query(ChatGPT_Handler):
     def __init__(self, system_message="",data_sources="",db_path=None,driver=None,dbserver=None, database=None, db_user=None ,db_password=None, **kwargs):
@@ -147,12 +141,12 @@ class SQL_Query(ChatGPT_Handler):
         
     def execute_sql_query(self, query, limit=10000):  
         if self.db_path is not None:  
-            engine = create_engine(f'sqlite:///{self.db_path}')  
+            engine = create_engine(f'sqlite:///{self.db_path}')
         else:  
             connecting_string = f"Driver={{ODBC Driver 17 for SQL Server}};Server=tcp:{self.dbserver},1433;Database={self.database};Uid={self.db_user};Pwd={self.db_password}"
             params = parse.quote_plus(connecting_string)
 
-            engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
+            engine = create_engine(f"mssql+pyodbc:///?odbc_connect={params}")
 
 
         result = pd.read_sql_query(query, engine)
@@ -160,10 +154,10 @@ class SQL_Query(ChatGPT_Handler):
         for col in result.columns:  
             if 'date' in col.lower():  
                 result[col] = pd.to_datetime(result[col], errors="ignore")  
-  
+
         if limit is not None:  
             result = result.head(limit)  # limit to save memory  
-  
+
         # session.close()  
         return result  
 
@@ -230,11 +224,12 @@ class AnalyzeGPT(ChatGPT_Handler):
 
         st.write(f"Question: {question}")
         # if "init" not in self.st.session_state.keys():
-            
+
         #     self.st.session_state['init']= True
 
         def execute_sql(query):
             return self.sql_query_tool.execute_sql_query(query)
+
         observation=None
         def show(data):
             if type(data) is Figure:
@@ -245,9 +240,10 @@ class AnalyzeGPT(ChatGPT_Handler):
             # for key in self.st.session_state.keys():
             #     if "show" in key:
             #         i +=1
-            # self.st.session_state[f'show{i}']=data 
+            # self.st.session_state[f'show{i}']=data
             if type(data) is not Figure:
-                self.st.session_state[f'observation: this was shown to user']=data
+                self.st.session_state['observation: this was shown to user'] = data
+
         def observe(name, data):
             try:
                 data = data[:10] # limit the print out observation to 15 rows
@@ -277,7 +273,7 @@ class AnalyzeGPT(ChatGPT_Handler):
             new_input += f"\n{llm_output}"
             for key, value in next_steps.items():
                 new_input += f"\n{value}"
-                
+
                 if "ACTION" in key.upper():
                     if show_code:
                         st.write(key)
@@ -302,7 +298,7 @@ class AnalyzeGPT(ChatGPT_Handler):
                     except Exception as e:
                         observations.append(("Error:",str(e)))
                         serialized_obs.append({"\nEncounter following error, can you try again?\n:":str(e)+"\nAction:"})
-                        
+
                     for observation in observations:
                         st.write(observation[0])
                         st.write(observation[1])

@@ -32,14 +32,14 @@ class Search_Client():
         with open(emb_map_file_path) as file:
             self.chunks_emb = json.load(file)
 
-    def find_article(self,question, topk=3):  
+    def find_article(self,question, topk=3):
         """  
         Given an input vector and a dictionary of label vectors,  
         returns the label with the highest cosine similarity to the input vector.  
         """  
-        input_vector = get_embedding(question, engine = emb_engine)        
+        input_vector = get_embedding(question, engine = emb_engine)
         # Compute cosine similarity between input vector and each label vector
-        cosine_list=[]  
+        cosine_list=[]
         for chunk_id,chunk_content, vector in self.chunks_emb:  
             #by default, we use embedding for the entire content of the topic (plus topic descrition).
             # If you you want to use embedding on just topic name and description use this code cosine_sim = cosine_similarity(input_vector, vector[0])
@@ -49,11 +49,10 @@ class Search_Client():
         cosine_list= cosine_list[:topk]
         best_chunks =[chunk[0] for chunk in cosine_list]
         contents = [chunk[1] for chunk in cosine_list]
-        text_content = ""
-        for chunk_id, content in zip(best_chunks, contents):
-            text_content += f"{chunk_id}\n{content}\n"
-
-        return text_content
+        return "".join(
+            f"{chunk_id}\n{content}\n"
+            for chunk_id, content in zip(best_chunks, contents)
+        )
 
 
 #azcs implementation
@@ -85,12 +84,10 @@ def search_knowledgebase_acs(search_query):
         query_type="semantic", query_language="en-us", semantic_configuration_name='default', query_caption="extractive", query_answer="extractive",
         select=["sourcepage","content"],
         top=3
-    )  
-    text_content =""
-    for result in results:  
-        text_content += f"{result['sourcepage']}\n{result['content']}\n"
-    # print("text_content", text_content)
-    return text_content
+    )
+    return "".join(
+        f"{result['sourcepage']}\n{result['content']}\n" for result in results
+    )
 
 def search_knowledgebase(search_query):
     if os.getenv("USE_AZCS") == "True":
@@ -185,52 +182,50 @@ class Smart_Agent(Agent):
         response_message = response["choices"][0]["message"]
 
 
-            # Step 2: check if GPT wanted to call a function
-        if  response_message.get("function_call"):
+        if response_message.get("function_call"):
             print("Recommended Function call:")
             print(response_message.get("function_call"))
             print()
-            
+
             # Step 3: call the function
             # Note: the JSON response may not always be valid; be sure to handle errors
-            
+
             function_name = response_message["function_call"]["name"]
-            
+
             # verify function exists
             if function_name not in self.functions_list:
                 print("function list:", self.functions_list)
-                raise Exception("Function " + function_name + " does not exist")
+                raise Exception(f"Function {function_name} does not exist")
             function_to_call = self.functions_list[function_name]  
-            
+
             # verify function has correct number of arguments
             function_args = json.loads(response_message["function_call"]["arguments"])
 
             if check_args(function_to_call, function_args) is False:
-                raise Exception("Invalid number of arguments for function: " + function_name)
-            
+                raise Exception(f"Invalid number of arguments for function: {function_name}")
+                        
 
-            # check if there's an opprotunity to use semantic cache
-            if function_name =="search_knowledgebase":
-                if os.getenv("USE_SEMANTIC_CACHE") == "True":
+            if os.getenv("USE_SEMANTIC_CACHE") == "True":
+                if function_name =="search_knowledgebase":
                     search_query = function_args["search_query"]
                     cache_output = get_cache(search_query)
-                    if cache_output is not None:
-                        print("semantic cache hit")
-                        conversation.append({"role": "assistant", "content": cache_output})
-                        return False, query_used,conversation, cache_output
-                    else:
+                    if cache_output is None:
                         print("semantic cache missed")
                         query_used = search_query
 
 
+                    else:
+                        print("semantic cache hit")
+                        conversation.append({"role": "assistant", "content": cache_output})
+                        return False, query_used,conversation, cache_output
             function_response = function_to_call(**function_args)
             print("Output of function call:")
             print(function_response)
             print()
 
-            
+
             # Step 4: send the info on the function call and function response to GPT
-            
+
             # adding assistant response to messages
             conversation.append(
                 {
@@ -249,7 +244,7 @@ class Smart_Agent(Agent):
                 }
             )  # extend conversation with function response
             openai.api_version = api_version
-        
+
             second_response = openai.ChatCompletion.create(
                 messages=conversation,
                 deployment_id=self.engine,

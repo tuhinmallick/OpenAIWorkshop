@@ -49,20 +49,21 @@ def get_sp(user_request):
 def resolve_vm_sku(vm_name):
     # Load vendors from JSONL file
     with open("data/vm_skus.jsonl", "r") as f:
-        vm_skus = [line for line in f]
+        vm_skus = list(f)
 
     # Try to match vendor name exactly
     for vm in vm_skus:
         if vm.lower() == vm_name.lower():
             return f"vm sku \"{vm_name}\" is valid", False
 
-    # Try to match vendor name partially using fuzzy matching
-    for vm in vm_skus:
-        if fuzz.partial_ratio(vm_name.lower(), vm.lower()) >= 70:
-            return vm, True# fuzzy match
-
-    # If no match is found, return "Not found"
-    return f"Not found", False
+    return next(
+        (
+            (vm, True)
+            for vm in vm_skus
+            if fuzz.partial_ratio(vm_name.lower(), vm.lower()) >= 70
+        ),
+        ("Not found", False),
+    )
 
 
 
@@ -142,15 +143,13 @@ FUNCTIONS_SPEC= [
 def transcribe(audio_file):
     # transcript = openai.Audio.transcribe(os.getenv("WHISPER_DEPLOYMENT"), audio_file)
     # print(audio_file)
-    headers={}
-    headers['api-key']=os.getenv('WHISPER_AOAI_KEY')
+    headers = {'api-key': os.getenv('WHISPER_AOAI_KEY')}
     endpoint=os.getenv('WHISPER_AOAI_ENDPOINT')
     files = {
         'file': audio_file,
     }
     url=f"{endpoint}openai/deployments/{whisper_engine}/audio/transcriptions?api-version=2023-09-01-preview"
-    response=requests.post(url,files=files,headers=headers,json={"language":"en"})
-    return response
+    return requests.post(url,files=files,headers=headers,json={"language":"en"})
 
 
 def save_audio_file(audio_bytes, file_extension):

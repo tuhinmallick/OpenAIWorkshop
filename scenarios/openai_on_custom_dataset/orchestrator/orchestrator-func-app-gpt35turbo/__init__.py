@@ -36,15 +36,15 @@ search_client = SearchClient(endpoint=endpoint,
 def run_openai(prompt, engine=GPT_ENGINE):
     """Recognize entities in text using OpenAI's text classification API."""
     max_response_tokens = 1250
-    token_limit= 4096   
+    token_limit= 4096
     try:
         response = openai.ChatCompletion.create(
-                    engine=GPT_ENGINE, 
-                    messages = prompt,
-                    temperature=0,
-                    max_tokens=max_response_tokens,
-                    stop=f"Answer:"
-                    )
+            engine=GPT_ENGINE,
+            messages=prompt,
+            temperature=0,
+            max_tokens=max_response_tokens,
+            stop="Answer:",
+        )
         return response['choices'][0]['message']['content']
     except Exception as e:
         return e.user_message
