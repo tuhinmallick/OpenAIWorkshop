@@ -189,7 +189,7 @@ index_schema = {
 
 def delete_search_index():
     try:
-        url = SEARCH_ENDPOINT + "indexes/" + index_name + api_version 
+        url = f"{SEARCH_ENDPOINT}indexes/{index_name}{api_version}"
         response  = requests.delete(url, headers=headers)
         print("Index deleted")
     except Exception as e:
@@ -198,7 +198,7 @@ def delete_search_index():
 def create_search_index():
     try:
         # Create Index
-        url = SEARCH_ENDPOINT + "indexes" + api_version
+        url = f"{SEARCH_ENDPOINT}indexes{api_version}"
         response  = requests.post(url, headers=headers, json=index_schema)
         index = response.json()
         print("Index created")
@@ -209,7 +209,7 @@ def create_search_index():
 
 def add_document_to_index(page_idx, documents):
     try:
-        url = SEARCH_ENDPOINT + "indexes/" + index_name + "/docs/index" + api_version
+        url = f"{SEARCH_ENDPOINT}indexes/{index_name}/docs/index{api_version}"
         response  = requests.post(url, headers=headers, json=documents)
         print(f"page_idx is {page_idx} - {len(documents['value'])} Documents added")
     except Exception as e:
@@ -258,27 +258,27 @@ def create_chunked_data_files(page_idx, search_doc):
 try:    
     delete_search_index()
     create_search_index()    
-    
-    if(formUrl != ""):
-      print(f"Analyzing form from URL {formUrl}...")
-      poller = document_analysis_client.begin_analyze_document_from_url("prebuilt-layout", formUrl)
-      result = poller.result()
-      print(f"Processing result...this might take a few minutes...")
-      process_afr_result(result, "")
-    
 
-    if(localFolderPath != ""):
-      for filename in os.listdir(localFolderPath):
-        file = os.path.join(localFolderPath, filename)    
-        with open(file, "rb") as f:
-          print(f"Analyzing file {filename} from directory {localFolderPath}...")
-          poller = document_analysis_client.begin_analyze_document(
-              "prebuilt-layout", document=f
-          )
-          result = poller.result()
-          print(f"{filename}Processing result...this might take a few minutes...")
-          process_afr_result(result, filename)
-      print(f"done")
+    if (formUrl != ""):
+        print(f"Analyzing form from URL {formUrl}...")
+        poller = document_analysis_client.begin_analyze_document_from_url("prebuilt-layout", formUrl)
+        result = poller.result()
+        print("Processing result...this might take a few minutes...")
+        process_afr_result(result, "")
+
+
+    if (localFolderPath != ""):
+        for filename in os.listdir(localFolderPath):
+          file = os.path.join(localFolderPath, filename)    
+          with open(file, "rb") as f:
+            print(f"Analyzing file {filename} from directory {localFolderPath}...")
+            poller = document_analysis_client.begin_analyze_document(
+                "prebuilt-layout", document=f
+            )
+            result = poller.result()
+            print(f"{filename}Processing result...this might take a few minutes...")
+            process_afr_result(result, filename)
+        print("done")
 except Exception as e:
     print(e)
 

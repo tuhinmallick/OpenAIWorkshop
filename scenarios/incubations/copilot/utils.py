@@ -6,8 +6,7 @@ import inspect
 def gpt_stream_wrapper(response):
     for chunk in response:
         chunk_msg= chunk['choices'][0]['delta']
-        chunk_msg= chunk_msg.get('content',"")
-        yield chunk_msg
+        yield chunk_msg.get('content',"")
 class Agent(): #Base class for Agent
     def __init__(self, engine,persona, name=None, init_message=None):
         if init_message is not None:

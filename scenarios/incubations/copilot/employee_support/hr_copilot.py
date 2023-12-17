@@ -4,7 +4,7 @@ from hr_copilot_utils import Smart_Agent,add_to_cache, HR_PERSONA, HR_AVAILABLE_
 import time
 import random
 import os
-from pathlib import Path  
+from pathlib import Path
 import json
 print("HR_AVAILABLE_FUNCTIONS", HR_AVAILABLE_FUNCTIONS)
 hr_agent = Smart_Agent(persona=HR_PERSONA,functions_list=HR_AVAILABLE_FUNCTIONS, functions_spec=HR_FUNCTIONS_SPEC, init_message="Hi there, this is Lucy, HR specialist helping with answering questions about HR & Payroll and handle personal information updates, may I have your name and employee ID?")
@@ -59,7 +59,7 @@ user_input= st.chat_input("You:")
 
 ## Conditional display of AI generated responses as a function of user provided prompts
 history = st.session_state['history']
-      
+
 if len(history) > 0:
     for message in history:
         if message.get("role") != "system" and message.get("name") is  None:
@@ -81,7 +81,7 @@ if user_input:
             for response in agent_response:
                 if len(response.choices)>0:
                     full_response += response.choices[0].delta.get("content", "")
-                    message_placeholder.markdown(full_response + "▌")
+                    message_placeholder.markdown(f"{full_response}▌")
             message_placeholder.markdown(full_response)
             if query_used: #add to cache
                 add_to_cache(query_used, full_response)

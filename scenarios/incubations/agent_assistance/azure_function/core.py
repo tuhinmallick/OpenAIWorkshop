@@ -91,12 +91,13 @@ question = "Why my paycheck is smaller than usual"
 def answer_assist(problem, search_query):
 
     articles, contents = find_article_emb_vec(search_query,2)
-    articles_contents=""
-    for article, content in zip(articles, contents):
-        articles_contents += f""" 
+    articles_contents = "".join(
+        f""" 
         article:{article}
         content: {content}
     """
+        for article, content in zip(articles, contents)
+    )
     articles_contents = f"""
     <<knowledge articles>>
     {articles_contents}
@@ -138,7 +139,7 @@ def recommend_solution(conversation):
     result =[]
     while (i<5): #handle wrong format output
         problems=extract_problems(conversation)
-        logging.info("problems extracted are "+ str(problems))
+        logging.info(f"problems extracted are {str(problems)}")
         try:
             problems=json.loads(problems)
             for problem in problems:

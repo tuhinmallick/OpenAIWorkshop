@@ -26,8 +26,7 @@ def generate_embeddings(text):
     openai.api_version = "2023-05-15"
     response = openai.Embedding.create(
         input=text, engine=emb_engine)
-    embeddings = response['data'][0]['embedding']
-    return embeddings
+    return response['data'][0]['embedding']
 
 def search_knowledgebase(search_query):
     vector = Vector(value=generate_embeddings(search_query), k=3, fields="embedding")
@@ -37,10 +36,10 @@ def search_knowledgebase(search_query):
         vectors= [vector],
         select=["sourcepage","content"],
         top=5
-    )  
-    text_content =""
-    for result in results:  
-        text_content += f"{result['sourcepage']}\n{result['content']}\n"
+    )
+    text_content = "".join(
+        f"{result['sourcepage']}\n{result['content']}\n" for result in results
+    )
     print("text_content", text_content)
     return text_content
 

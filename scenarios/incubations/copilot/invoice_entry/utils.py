@@ -52,13 +52,17 @@ def resolve_vendor_name(vendor_name):
         if vendor_name.lower() == vendor["vendor_name"].lower():
             return f"Vendor name \"{vendor_name}\" is valid", False
 
-    # Try to match vendor name partially using fuzzy matching
-    for vendor in vendors:
-        if fuzz.partial_ratio(vendor_name.lower(), vendor["vendor_name"].lower()) >= 80:
-            return vendor["vendor_name"], True# fuzzy match
-
-    # If no match is found, return "Not found"
-    return f"Not found", False
+    return next(
+        (
+            (vendor["vendor_name"], True)
+            for vendor in vendors
+            if fuzz.partial_ratio(
+                vendor_name.lower(), vendor["vendor_name"].lower()
+            )
+            >= 80
+        ),
+        ("Not found", False),
+    )
     
 
 def validate_invoice(**kwargs):
@@ -167,15 +171,13 @@ FUNCTIONS_SPEC= [
 def transcribe(audio_file):
     # transcript = openai.Audio.transcribe(os.getenv("WHISPER_DEPLOYMENT"), audio_file)
     # print(audio_file)
-    headers={}
-    headers['api-key']=os.getenv('WHISPER_AOAI_KEY')
+    headers = {'api-key': os.getenv('WHISPER_AOAI_KEY')}
     endpoint=os.getenv('WHISPER_AOAI_ENDPOINT')
     files = {
         'file': audio_file,
     }
     url=f"{endpoint}openai/deployments/{whisper_engine}/audio/transcriptions?api-version=2023-09-01-preview"
-    response=requests.post(url,files=files,headers=headers,json={"language":"en"})
-    return response
+    return requests.post(url,files=files,headers=headers,json={"language":"en"})
 
 
 def save_audio_file(audio_bytes, file_extension):

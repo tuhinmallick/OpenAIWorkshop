@@ -21,10 +21,10 @@ def main():
         print("processing...")
     for folder in ["generated_documents", "cleansed_documents"]:
         for filename in os.listdir(folder):
-            print("on file:" + filename)
+            print(f"on file:{filename}")
             with open(os.path.join(folder, filename), 'r') as src:
                 blob_name=f'{folder}/{filename}'
-                print("on blob:" + blob_name)
+                print(f"on blob:{blob_name}")
                 blob_client = BlobClient.from_connection_string(args.conn_string,container_name=args.containername,blob_name=blob_name,)
                 file_content = src.read()
                 blob_client.upload_blob(file_content)

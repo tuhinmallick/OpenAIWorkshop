@@ -39,8 +39,7 @@ def create_document(doc_generation_engine, document_creation_prompt, temperature
 def create_document_name(i, random_sentiment, random_topic, random_product, total_tokens, completion_tokens):
     # Create a name for the document based on the randomly selected sentiment, topic, and product
     logging.info('Creating document name.')
-    document_name = f'{i}_{total_tokens}_{completion_tokens}_{random_sentiment}_{random_topic}_{random_product}_document.txt'
-    return document_name
+    return f'{i}_{total_tokens}_{completion_tokens}_{random_sentiment}_{random_topic}_{random_product}_document.txt'
 
 def write_generated_documents_as_text(filename, text):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'generated_documents')

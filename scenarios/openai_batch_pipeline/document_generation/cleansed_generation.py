@@ -26,11 +26,9 @@ def main():
     openai.api_base = args.openai_api_base_url
     openai.api_version = "2022-12-01"
     openai.api_key = args.openai_api_key
-    
+
     for filename in os.listdir('scenarios/openai_batch_pipeline/document_generation/generated_documents'):
         if filename.endswith('.txt'):
-            results = {}
-
             with open(os.path.join("scenarios/openai_batch_pipeline/document_generation/generated_documents", filename), 'r') as src: 
                 txt = src.read()
 
@@ -45,8 +43,10 @@ def main():
                 frequency_penalty= frequency_penalty,
                 presence_penalty= presence_penalty,
                 stop= None)
-            results['summary'] = openai_output.choices[0].text
-            results["customerSentiment"] = filename.split("_")[3]
+            results = {
+                'summary': openai_output.choices[0].text,
+                "customerSentiment": filename.split("_")[3],
+            }
             results["topic"] = filename.split("_")[4]
             results["product"] = filename.split("_")[5]
             results["filename"] = filename

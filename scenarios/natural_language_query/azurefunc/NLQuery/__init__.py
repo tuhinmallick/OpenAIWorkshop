@@ -31,38 +31,36 @@ def execute_sql_query(query):
     #logging.info('Python HTTP trigger function processed a request.')
     server=os.getenv("SQL_SERVER_NAME")
     database=os.getenv("SQL_DB_NAME")
-    
-   
+
+
     driver="{ODBC Driver 17 for SQL Server}"
-    db_token = ''
-    connection_string = 'DRIVER='+driver+';SERVER='+server+';DATABASE='+database
-    
+    connection_string = (
+        f'DRIVER={driver};SERVER=' + server + ';DATABASE=' + database
+    )
+
     #When MSI is enabled
     if os.getenv("MSI_SECRET"):
         logging.info('If block of checking MSI')
         conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
-    
-    #Used when run from local
+
     else:
         SQL_COPT_SS_ACCESS_TOKEN = 1256
 
         exptoken = b''
+        db_token = ''
         for i in bytes(db_token, "UTF-8"):
             exptoken += bytes({i})
             exptoken += bytes(1)
 
         tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
         conn = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct })
-    
-    
+
+
     cursor = conn.cursor()
-    cursor.execute(query) 
+    cursor.execute(query)
     data =cursor.fetchall()
 
-    cols = []
-    for i,_ in enumerate(cursor.description):
-        cols.append(cursor.description[i][0])
-
+    cols = [cursor.description[i][0] for i, _ in enumerate(cursor.description)]
     result = pd.DataFrame(np.array(data), columns = cols)
 
     return result.to_html()

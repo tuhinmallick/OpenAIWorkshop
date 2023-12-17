@@ -9,14 +9,17 @@ with st.sidebar:
     st.title("Whisper Transcription")
 
 
-    audio_bytes = audio_recorder("click to record", "stop")
-    if audio_bytes:
+    if audio_bytes := audio_recorder("click to record", "stop"):
         st.audio(audio_bytes, format="audio/wav")
         save_audio_file(audio_bytes, "mp3")
-    
+
         # Find the newest audio file
         audio_file_path = max(
-            ["files/"+f for f in os.listdir("./files") if f.startswith("audio")],
+            (
+                f"files/{f}"
+                for f in os.listdir("./files")
+                if f.startswith("audio")
+            ),
             key=os.path.getctime,
         )
 
@@ -46,7 +49,7 @@ if prompt:
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-        
+
         response= openai.ChatCompletion.create(
             deployment_id=st.session_state["openai_model"],
             messages=st.session_state.messages,
@@ -64,15 +67,15 @@ if prompt:
             print("Recommended Function call:")
             print(response_message.get("function_call"))
             print()
-            
+
             # Step 3: call the function
             # Note: the JSON response may not always be valid; be sure to handle errors
-            
+
             function_name = response_message["function_call"]["name"]
             print("function_name", function_name)
             # verify function has correct number of arguments
             function_args = json.loads(response_message["function_call"]["arguments"])
-            
+
             print("function_args", function_args)
             function_to_call = AVAILABLE_FUNCTIONS[function_name]
             function_response = function_to_call(**function_args)
@@ -80,9 +83,9 @@ if prompt:
             print(function_response)
             print()
 
-            
+
             # Step 4: send the info on the function call and function response to GPT
-            
+
             # adding assistant response to messages
             st.session_state.messages.append(
                 {
@@ -100,7 +103,7 @@ if prompt:
                     "content": function_response,
                 }
             )  # extend conversation with function response
-        
+
             assistant_response = openai.ChatCompletion.create(
                 messages=st.session_state.messages,
                 deployment_id=st.session_state["openai_model"],

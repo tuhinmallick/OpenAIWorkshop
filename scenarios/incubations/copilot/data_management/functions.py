@@ -461,21 +461,21 @@ class Smart_Coordinating_Agent(Smart_Agent):
                     print("Recommended Function call:")
                     print(response_message.get("function_call"))
                     print()
-                    
+
                     # Step 3: call the function
                     # Note: the JSON response may not always be valid; be sure to handle errors
-                    
+
                     function_name = response_message["function_call"]["name"]
                     if function_name == ROUTE_CALL_FUNCTION_NAME:
                         request_agent_change = True
-                        
-                        
+
+
                     # verify function exists
                     if function_name not in self.functions_list:
                         print("Function " + function_name + " does not exist")
 
                     function_to_call = self.functions_list[function_name]  
-                    
+
                     # verify function has correct number of arguments
                     function_args = json.loads(response_message["function_call"]["arguments"])
                     if check_args(function_to_call, function_args) is False:
@@ -486,7 +486,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                     print()
                     if request_agent_change:
                         request_agent_change = function_response # if the function is a route call function, assign the request_agent_change to be the name of department to change to
-                    
+
                     # adding assistant response to messages
                     conversation.append(
                         {
@@ -510,7 +510,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                         deployment_id=self.engine,
                         stream=stream,
                     )  # get a new response from GPT where it can see the function response
-                    
+
                     if not stream:
                         assistant_response = second_response["choices"][0]["message"]["content"]
                         conversation.append({"role": "assistant", "content": assistant_response})
@@ -529,7 +529,7 @@ class Smart_Coordinating_Agent(Smart_Agent):
                     assistant_response="Haizz, my memory is having some trouble, can you repeat what you just said?"
 
                     break
-                print("Exception as below, will retry\n", str(e))
+                print("Exception as below, will retry\n", e)
                 time.sleep(8)
 
         return False, request_agent_change,context_to_persist, conversation, assistant_response
